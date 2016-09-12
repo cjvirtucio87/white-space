@@ -182,6 +182,11 @@ var View = {
     }
   },
   validateMovement: function (keyPress, player) {
+    var endPoint = {x: player.x + View.coordinateChange[keyPress].x,
+                    y: player.y + View.coordinateChange[keyPress].y};
+    return View.validateMovementBounds(keyPress,player) && View.validateCollision(endPoint);
+  },
+  validateMovementBounds: function (keyPress, player) {
     switch (keyPress) {
       case 4:
         return player.x > 0;
@@ -192,6 +197,9 @@ var View = {
       case 2:
         return player.y < View.gameData.layout.length-1;
     }
+  },
+  validateCollision: function(endPoint) {
+    return View.gameData.layout[endPoint.y][endPoint.x] === '_';
   },
   pressed: {keyPress: null},
   // Change in coordinates per direction.
@@ -249,7 +257,7 @@ var Handlers = {
           }
         };
         if (bullet.y >= 0) {
-          setTimeout(accelCallback,0);
+          setTimeout(bulletAccelCallback,0);
         }
       }
     };
