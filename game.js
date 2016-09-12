@@ -181,8 +181,20 @@ var View = {
       return View.KEY_PRESS_CODES[event.which];
     }
   },
+  validateMovement: function (keyPress, player) {
+    switch (keyPress) {
+      case 4:
+        return player.x > 0;
+      case 6:
+        return player.x < View.gameData.layout[0].length-1;
+      case 8:
+        return player.y > 0;
+      case 2:
+        return player.y < View.gameData.layout.length-1;
+    }
+  },
   pressed: {keyPress: null},
-  // Coordinate changes per direction.
+  // Change in coordinates per direction.
   coordinateChange: {
     4: {x: -1, y: 0},
     6: {x: 1, y: 0},
@@ -210,14 +222,15 @@ var Handlers = {
   acceleratePlayer: function (player) {
     return function (ev) {
       var keyPress = View.filterKeyPress(ev);
-      if (keyPress && keyPress !== 'shoot') {
+      if (keyPress && keyPress !== 'shoot' && View.validateMovement(keyPress, player)) {
         View.pressed.keyPress = keyPress;
-        setTimeout(function() {
+        var playerAccelCallback = function() {
           // var vector = new Vector(coordinateChange[keyPress], player);
           player.cacheOldPos();
           player.accelerate(View.coordinateChange[keyPress]);
           window.requestAnimationFrame(View.render);
-        },0);
+        };
+        setTimeout(playerAccelCallback,0);
       }
     };
   },
@@ -226,13 +239,13 @@ var Handlers = {
       var keyPress = View.filterKeyPress(ev);
       if (keyPress && keyPress === 'shoot') {
         var bullet = bulletCallback();
-        var accelCallback = function () {
+        var bulletAccelCallback = function () {
           bullet.cacheOldPos();
           bullet.accelerate({x: 0, y: -1});
           window.requestAnimationFrame(View.render);
-          // Recursive queue up the bullet accel if within bounds.
+          // Recursively queue up the bullet accel if within bounds.
           if (bullet.y > 0) {
-            setTimeout(accelCallback,500);
+            setTimeout(bulletAccelCallback,500);
           }
         };
         if (bullet.y >= 0) {
