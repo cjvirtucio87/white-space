@@ -101,6 +101,9 @@ function Player () {
     this.x += vector.x;
     this.y += vector.y;
   };
+  this.cacheOldPos = function() {
+    this.oldPos = {x: this.x, y: this.y};
+  };
 }
 
 function Game () {
@@ -111,6 +114,7 @@ function Game () {
   };
   this.setPlayer = function(player) {
     this.player = player || new Player();
+    this.player.cacheOldPos();
   };
   this.handleAcceleration = function() {
     $document.on('keydown', Handlers.acceleratePlayer(this.player));
@@ -130,6 +134,7 @@ function Game () {
     });
   };
   this.updateLayout = function() {
+    this.layout[this.player.oldPos.y][this.player.oldPos.x] = '_';
     this.layout[this.player.y][this.player.x] = '@';
   };
   // this.movePlayer = function(player) {
@@ -192,6 +197,7 @@ var Handlers = {
         pressed.keyPress = keyPress;
         setTimeout(function() {
           // var vector = new Vector(coordinateChange[keyPress], player);
+          player.cacheOldPos();
           player.accelerate(coordinateChange[keyPress]);
           window.requestAnimationFrame(View.render);
         },0);
