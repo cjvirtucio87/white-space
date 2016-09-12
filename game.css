@@ -28,8 +28,8 @@ td.cell {
 }
 
 td.bullet {
-  background-image: url('https://donaldcarling.files.wordpress.com/2016/03/general-bullet.png?w=417&h=269&crop=1');
   background-repeat: no-repeat;
-  background-color: white;
-  z-index: 10;
+  background-position: 2em 2em;
+  background-color: red;
+  z-index: 8;
 }

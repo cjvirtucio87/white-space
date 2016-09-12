@@ -98,7 +98,7 @@ function Player () {
 
 function Bullet (player) {
   this.x = player.x;
-  this.y = player.y-1;
+  this.y = player.y;
   this.accelerate = function (vector) {
     this.x += vector.x;
     this.y += vector.y;
@@ -123,6 +123,7 @@ function Game () {
     return function() {
       var newBullet = new Bullet(player);
       game.layout[newBullet.y][newBullet.x] = '|';
+      game.bullet = newBullet;
       return newBullet;
     };
   };
@@ -144,7 +145,7 @@ function Game () {
           case '@':
             return acc.append($("<td class=\'player cell\'></td>"));
           case '_':
-            return acc.append($("<td class=\'space cell\'></td>"));
+            return acc.append($("<td class=\'cell\'></td>"));
           case '|':
             return acc.append($("<td class=\'bullet cell\'></td>"));
         }
@@ -157,8 +158,10 @@ function Game () {
     this.layout[this.player.y][this.player.x] = '@';
     // Update bullet position.
     if (this.bullet) {
-      this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] = '_';
-      this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] = '|';
+      if (this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] !== '@') {
+        this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] = '_';
+      }
+      this.layout[this.bullet.y][this.bullet.x] = '|';
     }
   };
 }
@@ -202,7 +205,7 @@ var View = {
   }
 };
 
-// Handlers
+// Event handlers. Also has validations for keypresses.
 var Handlers = {
   acceleratePlayer: function (player) {
     return function (ev) {
@@ -224,10 +227,10 @@ var Handlers = {
       if (keyPress && keyPress === 'shoot') {
         var bullet = bulletCallback();
         if (bullet.y >= 0) {
-        setTimeout(function() {
-            bullet.cacheOldPos();
-            bullet.accelerate({x: 0, y: 1});
-            window.requestAnimationFrame(View.render);
+          setTimeout(function() {
+              bullet.cacheOldPos();
+              bullet.accelerate({x: 0, y: -1});
+              window.requestAnimationFrame(View.render);
           },0);
         }
       }
