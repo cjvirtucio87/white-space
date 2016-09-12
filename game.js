@@ -96,6 +96,18 @@ function Player () {
   };
 }
 
+function Bullet (player) {
+  this.x = player.x;
+  this.y = player.y-1;
+  this.accelerate = function (vector) {
+    this.x += vector.x;
+    this.y += vector.y;
+  };
+  this.cacheOldPos = function() {
+    this.oldPos = {x: this.x, y: this.y};
+  };
+}
+
 // Controller
 function Game () {
   this.init = function(player) {
@@ -107,8 +119,16 @@ function Game () {
     this.player = player || new Player();
     this.player.cacheOldPos();
   };
+  this.setBullet = function(game,player) {
+    return function() {
+      var newBullet = new Bullet(player);
+      game.layout[newBullet.y][newBullet.x] = '|';
+      return newBullet;
+    };
+  };
   this.handleAcceleration = function() {
     View.$document.on('keydown', Handlers.acceleratePlayer(this.player));
+    View.$document.on('keydown', Handlers.accelerateBullet(this.setBullet(this,this.player)));
   };
   this.setLayout = function(rows,cols) {
     this.layout = makeTable(rows,cols);
@@ -119,29 +139,43 @@ function Game () {
   this.stylify = function() {
     this.styledLayout = this.layout.map(function(row) {
       return row.reduce(function(acc,cell) {
-        var html = cell === '@' ? "<td class=\'player cell\'></td>" : "<td class=\'cell\'></td>";
-        return acc.append($(html));
+        var html;
+        switch (cell) {
+          case '@':
+            return acc.append($("<td class=\'player cell\'></td>"));
+          case '_':
+            return acc.append($("<td class=\'space cell\'></td>"));
+          case '|':
+            return acc.append($("<td class=\'bullet cell\'></td>"));
+        }
       }, $('<tr/>'));
     });
   };
   this.updateLayout = function() {
+    // Update player position.
     this.layout[this.player.oldPos.y][this.player.oldPos.x] = '_';
     this.layout[this.player.y][this.player.x] = '@';
+    // Update bullet position.
+    if (this.bullet) {
+      this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] = '_';
+      this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] = '|';
+    }
   };
 }
 
 var View = {
   // Filter key presses
   // Codes for direction.
-  DIRECTION_CODES: {
+  KEY_PRESS_CODES: {
     37: 4,
     38: 8,
     39: 6,
-    40: 2
+    40: 2,
+    32: 'shoot'
   },
-  filterDirection: function (event) {
-    if (View.DIRECTION_CODES[event.which]) {
-      return View.DIRECTION_CODES[event.which];
+  filterKeyPress: function (event) {
+    if (View.KEY_PRESS_CODES[event.which]) {
+      return View.KEY_PRESS_CODES[event.which];
     }
   },
   pressed: {keyPress: null},
@@ -172,15 +206,30 @@ var View = {
 var Handlers = {
   acceleratePlayer: function (player) {
     return function (ev) {
-      var keyPress = View.filterDirection(ev);
-      if (keyPress) {
+      var keyPress = View.filterKeyPress(ev);
+      if (keyPress && keyPress !== 'shoot') {
         View.pressed.keyPress = keyPress;
         setTimeout(function() {
           // var vector = new Vector(coordinateChange[keyPress], player);
           player.cacheOldPos();
-          player.accelerate(coordinateChange[keyPress]);
+          player.accelerate(View.coordinateChange[keyPress]);
           window.requestAnimationFrame(View.render);
         },0);
+      }
+    };
+  },
+  accelerateBullet: function (bulletCallback) {
+    return function (ev) {
+      var keyPress = View.filterKeyPress(ev);
+      if (keyPress && keyPress === 'shoot') {
+        var bullet = bulletCallback();
+        if (bullet.y >= 0) {
+        setTimeout(function() {
+            bullet.cacheOldPos();
+            bullet.accelerate({x: 0, y: 1});
+            window.requestAnimationFrame(View.render);
+          },0);
+        }
       }
     };
   }
