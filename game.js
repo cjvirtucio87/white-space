@@ -202,6 +202,7 @@ var View = {
     return View.gameData.layout[endPoint.y][endPoint.x] === '_';
   },
   pressed: {keyPress: null},
+  bullets: [],
   // Change in coordinates per direction.
   coordinateChange: {
     4: {x: -1, y: 0},
@@ -245,15 +246,19 @@ var Handlers = {
   accelerateBullet: function (bulletCallback) {
     return function (ev) {
       var keyPress = View.filterKeyPress(ev);
-      if (keyPress && keyPress === 'shoot') {
+      // Validate key press and bullet count on screen.
+      if (keyPress && keyPress === 'shoot' && View.bullets.length === 0) {
         var bullet = bulletCallback();
+        View.bullets.push(bullet);
         var bulletAccelCallback = function () {
           bullet.cacheOldPos();
           bullet.accelerate({x: 0, y: -1});
           window.requestAnimationFrame(View.render);
           // Recursively queue up the bullet accel if within bounds.
-          if (bullet.y > 0) {
+          if (bullet.y > 0 && View.bullets.length <= 1) {
             setTimeout(bulletAccelCallback,500);
+          } else {
+            View.bullets.pop();
           }
         };
         if (bullet.y >= 0) {
