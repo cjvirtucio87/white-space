@@ -83,17 +83,7 @@ function makeTable(numRows,numCols) {
   return output;
 }
 
-function randomizedTerrain() {
-  var randomNum = Math.random() * 10;
-  return (randomNum % 2 === 0) ? '_' : '#';
-}
-
-$document = $(document);
-$gameGrid = $('#game-grid');
-$player = $('tr.player');
-
-
-// Constructors
+// Models
 function Player () {
   this.x = 0;
   this.y = 0;
@@ -106,6 +96,7 @@ function Player () {
   };
 }
 
+// Controller
 function Game () {
   this.init = function(player) {
     this.setPlayer(player);
@@ -117,7 +108,7 @@ function Game () {
     this.player.cacheOldPos();
   };
   this.handleAcceleration = function() {
-    $document.on('keydown', Handlers.acceleratePlayer(this.player));
+    View.$document.on('keydown', Handlers.acceleratePlayer(this.player));
   };
   this.setLayout = function(rows,cols) {
     this.layout = makeTable(rows,cols);
@@ -137,18 +128,32 @@ function Game () {
     this.layout[this.player.oldPos.y][this.player.oldPos.x] = '_';
     this.layout[this.player.y][this.player.x] = '@';
   };
-  // this.movePlayer = function(player) {
-  //   function adjustLayout() {
-  //     this.layout[this.player.y][this.player.x] = '_';
-  //     this.layout[player.y][player.x] = '@';
-  //     this.setPlayer(player);
-  //   }
-  //   return adjustLayout.bind(this,player);
-  // };
 }
 
 var View = {
+  // Filter key presses
+  // Codes for direction.
+  DIRECTION_CODES: {
+    37: 4,
+    38: 8,
+    39: 6,
+    40: 2
+  },
+  filterDirection: function (event) {
+    if (View.DIRECTION_CODES[event.which]) {
+      return View.DIRECTION_CODES[event.which];
+    }
+  },
+  pressed: {keyPress: null},
+  // Coordinate changes per direction.
+  coordinateChange: {
+    4: {x: -1, y: 0},
+    6: {x: 1, y: 0},
+    2: {x: 0, y: 1},
+    8: {x: 0, y: -1}
+  },
   cacheDOM: function() {
+    this.$document = $(document);
     this.$gameGrid = $('table#game-grid');
   },
   cacheGameData: function(game) {
@@ -163,38 +168,13 @@ var View = {
   }
 };
 
-// Filter key presses
-// Codes for direction.
-var directionCodes = {
-  37: 4,
-  38: 8,
-  39: 6,
-  40: 2
-};
-
-function filterDirection(event) {
-  if (directionCodes[event.which]) {
-    return directionCodes[event.which];
-  }
-}
-
-// Coordinate changes per direction.
-var coordinateChange = {
-  4: {x: -1, y: 0},
-  6: {x: 1, y: 0},
-  2: {x: 0, y: 1},
-  8: {x: 0, y: -1}
-};
-
-var pressed = {keyPress: null};
-
 // Handlers
 var Handlers = {
   acceleratePlayer: function (player) {
     return function (ev) {
-      var keyPress = filterDirection(ev);
+      var keyPress = View.filterDirection(ev);
       if (keyPress) {
-        pressed.keyPress = keyPress;
+        View.pressed.keyPress = keyPress;
         setTimeout(function() {
           // var vector = new Vector(coordinateChange[keyPress], player);
           player.cacheOldPos();
