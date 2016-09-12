@@ -164,6 +164,10 @@ function Game () {
       this.layout[this.bullet.y][this.bullet.x] = '|';
     }
   };
+  this.clearBullet = function() {
+    this.layout[this.bullet.y+1][this.bullet.x] = '_';
+    this.bullet = null;
+  };
 }
 
 var View = {
@@ -255,10 +259,12 @@ var Handlers = {
           bullet.accelerate({x: 0, y: -1});
           window.requestAnimationFrame(View.render);
           // Recursively queue up the bullet accel if within bounds.
-          if (bullet.y > 0 && View.bullets.length <= 1) {
+          if (bullet.y >= 0 && View.bullets.length <= 1) {
             setTimeout(bulletAccelCallback,500);
           } else {
             View.bullets.pop();
+            View.gameData.clearBullet();
+            window.requestAnimationFrame(View.render);
           }
         };
         if (bullet.y >= 0) {
