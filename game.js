@@ -226,12 +226,17 @@ var Handlers = {
       var keyPress = View.filterKeyPress(ev);
       if (keyPress && keyPress === 'shoot') {
         var bullet = bulletCallback();
+        var accelCallback = function () {
+          bullet.cacheOldPos();
+          bullet.accelerate({x: 0, y: -1});
+          window.requestAnimationFrame(View.render);
+          // Recursive queue up the bullet accel if within bounds.
+          if (bullet.y > 0) {
+            setTimeout(accelCallback,500);
+          }
+        };
         if (bullet.y >= 0) {
-          setTimeout(function() {
-              bullet.cacheOldPos();
-              bullet.accelerate({x: 0, y: -1});
-              window.requestAnimationFrame(View.render);
-          },0);
+          setTimeout(accelCallback,0);
         }
       }
     };
