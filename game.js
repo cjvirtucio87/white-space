@@ -108,6 +108,18 @@ function Bullet (player) {
   };
 }
 
+function Enemy () {
+  this.x = 0;
+  this.y = 0;
+  this.accelerate = function (vector) {
+    this.x += vector.x;
+    this.y += vector.y;
+  };
+  this.cacheOldPos = function() {
+    this.oldPos = {x: this.x, y: this.y};
+  };
+}
+
 // Controller
 function Game () {
   this.init = function(player) {
@@ -127,9 +139,21 @@ function Game () {
       return newBullet;
     };
   };
+  this.setEnemy = function(game) {
+    return function() {
+      var newEnemy = new Enemy();
+      newEnemy.x = parseInt(game.layout[0].length/2);
+      newEnemy.y = 0;
+      game.layout[0][newEnemy.x] = '&';
+      game.enemy = newEnemy;
+      game.enemy.cacheOldPos();
+      return newEnemy;
+    };
+  };
   this.handleAcceleration = function() {
     View.$document.on('keydown', Handlers.acceleratePlayer(this.player));
     View.$document.on('keydown', Handlers.accelerateBullet(this.setBullet(this,this.player)));
+    Handlers.accelerateEnemy(this.setEnemy(this))();
   };
   this.setLayout = function(rows,cols) {
     this.layout = makeTable(rows,cols);
@@ -148,6 +172,8 @@ function Game () {
             return acc.append($("<td class=\'cell\'></td>"));
           case '|':
             return acc.append($("<td class=\'bullet cell\'></td>"));
+          case '&':
+            return acc.append($("<td class=\'enemy cell\'></td>"));
         }
       }, $('<tr/>'));
     });
@@ -162,11 +188,20 @@ function Game () {
         this.layout[this.bullet.oldPos.y][this.bullet.oldPos.x] = '_';
       }
       this.layout[this.bullet.y][this.bullet.x] = '|';
+    } if (this.enemy) {
+      if (this.layout[this.enemy.oldPos.y][this.enemy.oldPos.x] !== '@') {
+        this.layout[this.enemy.oldPos.y][this.enemy.oldPos.x] = '_';
+      }
+      this.layout[this.enemy.y][this.enemy.x] = '&';
     }
   };
   this.clearBullet = function() {
     this.layout[this.bullet.y+1][this.bullet.x] = '_';
     this.bullet = null;
+  };
+  this.clearEnemy = function() {
+    this.layout[this.enemy.y-1][this.bullet.x] = '_';
+    this.enemy = null;
   };
 }
 
@@ -207,6 +242,7 @@ var View = {
   },
   pressed: {keyPress: null},
   bullets: [],
+  enemies: [],
   // Change in coordinates per direction.
   coordinateChange: {
     4: {x: -1, y: 0},
@@ -270,6 +306,27 @@ var Handlers = {
         if (bullet.y >= 0) {
           setTimeout(bulletAccelCallback,0);
         }
+      }
+    };
+  },
+  accelerateEnemy: function (enemyCallback) {
+    return function () {
+      var enemy = enemyCallback();
+      var enemyAccelCallback = function () {
+        enemy.cacheOldPos();
+        enemy.accelerate({x: 0, y: 1});
+        window.requestAnimationFrame(View.render);
+        // Recursively queue up the enemy accel if within bounds.
+        if (enemy.y >= 0 && View.enemies.length <= 1) {
+          setInterval(enemyAccelCallback,500);
+        } else {
+          View.enemies.pop();
+          View.gameData.clearEnemy();
+          window.requestAnimationFrame(View.render);
+        }
+      };
+      if (enemy.y <= View.gameData.length-1) {
+        setInterval(enemyAccelCallback,500);
       }
     };
   }
