@@ -1,76 +1,3 @@
-// Math for Game Developers
-// Prototypes
-function Position(x,y) {
-  this.x = x;
-  this.y = y;
-  // Add the components of a vector to get a new position.
-  this.add = function(vector) {
-    return new Position((this.x + vector.x), (this.y + vector.y));
-  };
-}
-
-// Can pass optional coords.
-function Vector(endPoint, startPoint, coords) {
-  if (coords) {
-    this.x = coords.x;
-    this.y = coords.y;
-  } else {
-    this.x = (endPoint.x + startPoint.x);
-    this.y = (endPoint.y + startPoint.y);
-  }
-  // Scale the vector to move faster/slower.
-  this.scale = function (scalar) {
-    this.x *= scalar;
-    this.y *= scalar;
-  };
-  // Magnitude is the length of the vector.
-  this.magnitude = function () {
-    return Math.sqrt(Math.pow(this.x,2) + Math.pow(this.y,2));
-  };
-  // Vectors are not aware of their own positions, so that is why
-  // you can add or subtract vectors with/from other vectors.
-  this.add = function (vector) {
-    return new Vector(_,_,{x: (this.x + vector.x), y: (this.y + vector.y)});
-  };
-  this.subtract = function (vector) {
-    return new Vector(_,_,{x: (this.x - vector.x), y: (this.y - vector.y)});
-  };
-}
-
-// A unit vector is a vector with a magnitude of 1.
-function UnitLengthVector(vector) {
-  // Link UnitLengthVector to the Vector prototype.
-  Vector.call(this, vector.x, vector.y);
-  this.x = (vector.x / vector.magnitude());
-  this.y = (vector.y / vector.magnitude());
-}
-
-// Pythagorean theorem for vectorLength
-// a^2 = b^2 + c^2
-// a is the hypotenuse (vectorLength).
-// b is vector.x
-// c is vector.y
-// vectorLength^2 = vector.x^2 + vector.y^2
-// Therefore, vectorLength = Math.sqrt(vector.x^2 + vector.y^2)
-//           /
-//          /.
-//         / .
-//        /...
-
-
-// Helpers to compute physics
-function velocity(accel, time) {
-  return accel * time;
-}
-
-function time(velocity, accel) {
-  return velocity / accel;
-}
-
-function distance(velocity, time) {
-  return velocity * time;
-}
-
 // Helper to make a plan.
 function makeTable(numRows,numCols) {
   var output = [];
@@ -206,7 +133,6 @@ function Game () {
 }
 
 var View = {
-  // Filter key presses
   // Codes for direction.
   KEY_PRESS_CODES: {
     37: 4,
@@ -274,7 +200,6 @@ var Handlers = {
       if (keyPress && keyPress !== 'shoot' && View.validateMovement(keyPress, player)) {
         View.pressed.keyPress = keyPress;
         var playerAccelCallback = function() {
-          // var vector = new Vector(coordinateChange[keyPress], player);
           player.cacheOldPos();
           player.accelerate(View.coordinateChange[keyPress]);
           window.requestAnimationFrame(View.render);
